@@ -5,7 +5,7 @@
     "author": "Towhid",
     "host": {
         "app": "XD",
-        "minVersion": "13.0"
+        "minVersion": "21.0"
     },
     "icons" : [ {
       "path" : "images/icon@1x.png",
