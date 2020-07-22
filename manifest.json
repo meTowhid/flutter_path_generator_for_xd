@@ -1,7 +1,7 @@
 {
     "id": "8db49455",
     "name": "Flutter Path Generator",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "author": "Towhid",
     "host": {
         "app": "XD",
@@ -15,7 +15,16 @@
       "path" : "images/icon@2x.png",
       "width" : 48,
       "height" : 48
-    } ],
+    }, {
+      "path" : "images/icon@3x.png",
+      "width" : 96,
+      "height" : 96
+    } , {
+      "path" : "images/icon@4x.png",
+      "width" : 96,
+      "height" : 96
+    } 
+  ],
     "uiEntryPoints": [
         {
             "type": "panel",

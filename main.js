@@ -14,7 +14,7 @@ function create() {
                 color: #8E8E8E;
                 width: 20px;
                 text-align: right;
-                font-size: 9px;
+                font-size: 7px;
             }
             label.row input {
                 flex: 1 1 auto;
@@ -28,7 +28,7 @@ function create() {
         </style>
         <form method="dialog" id="main">
             <div class="row break">
-                <p id="flutter_code" />
+                <p id="flutter_code" uxp-quiet="true"/>
             </div>
             <footer><button id="ok" type="submit" uxp-variant="cta">Copy</button></footer>
         </form>
@@ -37,6 +37,7 @@ function create() {
     function copyCode() {
         clipboard.copyText(flutterCodes);
         console.log("Code generated and copied to clipboard");
+        console.log(flutterCodes);
     }
 
     panel = document.createElement("div");
@@ -74,11 +75,12 @@ function update() {
         form.className = "show";
         warning.className = "hide";
         generatePathData(pathShapes);
+        document.querySelector("#flutter_code").innerHTML = flutterCodes;
     }
 }
 
 function generatePathData(pathShapes) {
-    let flutterCodes = "";
+    flutterCodes = "";
 
     pathShapes.forEach(path => {
         let segments = extractedPathData(path.pathData);
@@ -90,8 +92,6 @@ function generatePathData(pathShapes) {
         console.log(code);
         flutterCodes += (code + "\n\n");
     });
-
-    document.querySelector("#flutter_code").innerHTML = flutterCodes;
 }
 
 const extractedPathData = (rawPathStr) => {
@@ -145,20 +145,19 @@ const normalizePoints = (pathData, offsetPoint) => {
     return data;
 }
 
-const round = (number) => {return Math.round(number * 100) / 100;}
+const round = (number) => { return Math.round(number * 100) / 100; }
 
 function generateCode(path, shapeWidth, shapeHeight) {
     var code = [
-        // ["@override", 0],
-        // ["Path getClip(Size size) {", 0],
-        ["double xs = size.width / " + round(shapeWidth) + ";", 1],
-        ["double ys = size.height / " + round(shapeHeight) + ";", 1],
+        ["double shapeWidth = " + round(shapeWidth) + ";", 1],
+        ["double shapeHeight = " + round(shapeHeight) + ";", 1],
+        ["double xs = size.width / shapeWidth;", 1],
+        ["double ys = size.height / shapeHeight;", 1],
         ["Path path = Path()", 2]
     ];
 
     for (var segmentId in path) {
         var segment = path[segmentId];
-        // console.log(segment);
         switch (segment[0]) {
             case "M":
                 code.push([
@@ -179,7 +178,7 @@ function generateCode(path, shapeWidth, shapeHeight) {
                     "    ..cubicTo("
                     + segment[1] + " * xs, " + segment[2] + " * ys,"
                     + segment[3] + " * xs, " + segment[4] + " * ys,"
-                    + segment[5] + " * xs, " + segment[6] + " * ys,"
+                    + segment[5] + " * xs, " + segment[6] + " * ys"
                     + ")"
                     , 1]);
                 break;
@@ -190,9 +189,6 @@ function generateCode(path, shapeWidth, shapeHeight) {
                 break;
         }
     }
-
-    // code.push(["return path;", 1]);
-    // code.push(["}", 0]);
 
     var returnCode = "";
     for (var lineId in code) {
