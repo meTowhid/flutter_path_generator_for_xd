@@ -1,8 +1,8 @@
 const clipboard = require("clipboard");
-const { selection } = require("scenegraph")
+const { Color, selection } = require("scenegraph")
 let panel;
 let flutterCodes = "";
-let pathShapes = [];
+let selectedPaths = [];
 
 function create() {
     const HTML = `
@@ -29,6 +29,19 @@ function create() {
     .hide {
         display: none;
     }
+
+    .codeView {
+        -moz-user-select: text;
+        -khtml-user-select: text;
+        -webkit-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+        height: 500px;
+        border: 1px solid #ccc;
+        font-size: 140%;
+        overflow: auto;
+        padding: 10px;
+    }
     </style>
     <form method="dialog" id="main">
         <h5>Area</h5>
@@ -45,14 +58,16 @@ function create() {
         <label>
             <input type="checkbox" id="cb_artboard" checked>Match artboard size<br>
         </label>
+        <br>
+        <label>
+            <input type="checkbox" id="cb_style" checked>Generate style code<br>
+        </label>
         <br><br>
-        <h5>Flutter Code</h5>
-        <div class="row break">
-            <p id="flutter_code" uxp-quiet="true" style="font-size:140%;"/>
-        </div>
-        <footer><button id="ok" type="submit" uxp-variant="cta">Copy</button></footer>
+        <button id="ok" type="submit" uxp-variant="cta">Copy</button><br>
+        <h5>Flutter Code</h5><br>
+        <div id="flutter_code" uxp-quiet="true" class="codeView"></div>
     </form>
-    <p id="warning">Select a path please.</p>
+    <h5 id="warning">Select a path please</h5>
         `
 
     panel = document.createElement("div");
@@ -60,9 +75,10 @@ function create() {
     panel.querySelector("form").addEventListener("submit", function () {
         clipboard.copyText(flutterCodes);
         console.log("Code generated and copied to clipboard");
-        console.log(flutterCodes);
+        // console.log(flutterCodes);
     });
     panel.querySelector("#cb_artboard").addEventListener("change", updateAreaInfo);
+    panel.querySelector("#cb_style").addEventListener("change", updateAreaInfo);
 
     return panel;
 }
@@ -70,19 +86,19 @@ function create() {
 function updateAreaInfo() {
     let width = panel.querySelector("#txtW");
     let height = panel.querySelector("#txtH");
-    let isChecked = panel.querySelector("#cb_artboard").checked;
+    let isArtboardChecked = panel.querySelector("#cb_artboard").checked;
 
-    width.readOnly = isChecked;
-    height.readOnly = isChecked;
+    width.readOnly = isArtboardChecked;
+    height.readOnly = isArtboardChecked;
 
-    let area = isChecked ? selection.focusedArtboard.localBounds : selection.items[0].localBounds;
+    let area = isArtboardChecked ? selection.focusedArtboard.localBounds : selection.items[0].localBounds;
 
     console.log(area);
 
     width.value = round(area.width);
     height.value = round(area.height);
 
-    generatePathData(pathShapes);
+    generatePathData(selectedPaths);
     document.querySelector("#flutter_code").innerHTML = flutterCodes.trim().replace(/\n/g, "<br>");
 }
 
@@ -95,49 +111,74 @@ function update() {
     let form = document.querySelector("form");
     let warning = document.querySelector("#warning");
 
-    if (!selection || !(selection.items.length == 0[0] instanceof Path)) {
+    if (!selection || selection.items.length == 0) {
         form.className = "hide";
         warning.className = "show";
-        console.log("No object selected!");
+        warning.innerHTML = "No path selected!";
     }
 
-    pathShapes = [];
+    // if (selection.items.length > 1) {
+    //     form.className = "hide";
+    //     warning.className = "show";
+    //     warning.innerHTML = "You should not select mulltiple paths!";
+    // }
+
+    selectedPaths = [];
     selection.items.forEach(element => {
-        if (element.constructor.name == "Path") pathShapes.push(element);
+        if (element instanceof Path) selectedPaths.push(element);
     });
 
-    if (pathShapes.length == 0) {
+    if (selectedPaths.length == 0) {
         form.className = "hide";
         warning.className = "show";
-        console.log("No path found!");
+        warning.innerHTML = "No path selected!";
     } else {
         form.className = "show";
         warning.className = "hide";
-        updateAreaInfo(pathShapes);
+        updateAreaInfo();
     }
 }
 
-function generatePathData(pathShapes) {
+function generatePathData(selectedPaths) {
     flutterCodes = "";
     let inputWidth = panel.querySelector("#txtW").value;
     let inputHeight = panel.querySelector("#txtH").value;
-    let isChecked = panel.querySelector("#cb_artboard").checked;
+    let isStyleChecked = panel.querySelector("#cb_style").checked;
+    let isArtboardChecked = panel.querySelector("#cb_artboard").checked;
 
-    pathShapes.forEach(path => {
+    selectedPaths.forEach(path => {
+        let f = new Color(path.fill);
+        let fillColor = "0x" + f.a.toString(16) + f.toHex().slice(1);
+        let s = new Color(path.stroke);
+        let strokeColor = "0x" + s.a.toString(16) + s.toHex().slice(1);
+
+        let style = {
+            "enabled": isStyleChecked,
+            "fillEnabled": path.fillEnabled,
+            "fill": fillColor,
+            "strokeEnabled": path.strokeEnabled,
+            "stroke": strokeColor,
+            "strokeWidth": path.strokeWidth,
+            "strokeCap": path.strokeEndCaps,
+            "strokeJoin": path.strokeJoins
+        }
+        // console.log(style);
+
         let segments = extractedPathData(path.pathData);
         let offset = findOffsetPoint(segments);
 
         let normalized = normalizePoints(segments, offset);
         let code = generateCode(normalized, {
-            "reposition": isChecked,
+            "reposition": isArtboardChecked,
             "x": path.topLeftInParent.x,
             "y": path.topLeftInParent.y,
             "name": path.name.toLowerCase().replace(/ /g, "_"),
-            "width": isChecked ? inputWidth : round(path.localBounds.width),
-            "height": isChecked ? inputHeight : round(path.localBounds.height)
+            "width": isArtboardChecked ? inputWidth : round(path.localBounds.width),
+            "height": isArtboardChecked ? inputHeight : round(path.localBounds.height),
+            "style": style
         });
 
-        console.log(code);
+        // console.log(code);
         flutterCodes += (code + "\n\n");
     });
 }
@@ -245,6 +286,20 @@ function generateCode(path, props) {
     let oy = round(props.y);
     if (props.reposition && (ox != 0.0 || oy != 0.0)) code.push([
         props.name + " = " + props.name + ".shift(Offset(" + ox + " * " + xs + ", " + oy + " * " + ys + "));"
+        , 2]);
+
+    if (props.style.enabled && props.style.fillEnabled) code.push([
+        "Paint " + props.name + "_fillPaint = Paint()..style = PaintingStyle.fill..color = Color(" + props.style.fill + ");"
+        , 2]);
+
+    if (props.style.enabled && props.style.strokeEnabled) code.push([
+        "Paint " + props.name + "_strokePaint = Paint()"
+        + "..style = PaintingStyle.stroke"
+        + "..color = Color(" + props.style.stroke + ")"
+        + "..strokeWidth = " + props.style.strokeWidth
+        + "..strokeCap = StrokeCap." + props.style.strokeCap
+        + "..strokeJoin = StrokeJoin." + props.style.strokeJoin
+        + ";"
         , 2]);
 
     var returnCode = "";
