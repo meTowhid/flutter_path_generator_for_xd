@@ -31,11 +31,6 @@ function create() {
     }
 
     .codeView {
-        -moz-user-select: text;
-        -khtml-user-select: text;
-        -webkit-user-select: text;
-        -ms-user-select: text;
-        user-select: text;
         height: 500px;
         border: 1px solid #ccc;
         font-size: 140%;
@@ -67,7 +62,7 @@ function create() {
         <h5>Flutter Code</h5><br>
         <div id="flutter_code" uxp-quiet="true" class="codeView"></div>
     </form>
-    <h5 id="warning">Select a path please</h5>
+    <h5 id="warning">Need to select path to work with this plugin</h5>
         `
 
     panel = document.createElement("div");
@@ -114,7 +109,6 @@ function update() {
     if (!selection || selection.items.length == 0) {
         form.className = "hide";
         warning.className = "show";
-        warning.innerHTML = "No path selected!";
     }
 
     // if (selection.items.length > 1) {
@@ -131,7 +125,6 @@ function update() {
     if (selectedPaths.length == 0) {
         form.className = "hide";
         warning.className = "show";
-        warning.innerHTML = "No path selected!";
     } else {
         form.className = "show";
         warning.className = "hide";
@@ -273,9 +266,7 @@ function generateCode(path, props) {
                     , 1]);
                 break;
             case "Z":
-                code.push([
-                    "    ..close()"
-                    , 1]);
+                code.push(["    ..close()", 1]);
                 break;
         }
     }
@@ -292,15 +283,15 @@ function generateCode(path, props) {
         "Paint " + props.name + "_fillPaint = Paint()..style = PaintingStyle.fill..color = Color(" + props.style.fill + ");"
         , 2]);
 
-    if (props.style.enabled && props.style.strokeEnabled) code.push([
-        "Paint " + props.name + "_strokePaint = Paint()"
-        + "..style = PaintingStyle.stroke"
-        + "..color = Color(" + props.style.stroke + ")"
-        + "..strokeWidth = " + props.style.strokeWidth
-        + "..strokeCap = StrokeCap." + props.style.strokeCap
-        + "..strokeJoin = StrokeJoin." + props.style.strokeJoin
-        + ";"
-        , 2]);
+    if (props.style.enabled && props.style.strokeEnabled) {
+        code.push(["Paint " + props.name + "_strokePaint = Paint()", 2]);
+        code.push(["    ..style = PaintingStyle.stroke", 1]);
+        code.push(["    ..color = Color(" + props.style.stroke + ")", 1]);
+        code.push(["    ..strokeWidth = " + props.style.strokeWidth, 1]);
+        if (props.style.strokeCap != "butt") code.push(["    ..strokeCap = StrokeCap." + props.style.strokeCap, 1]);
+        if (props.style.strokeJoin != "miter") code.push(["    ..strokeJoin = StrokeJoin." + props.style.strokeJoin, 1]);
+        code.push([";", 0]);
+    }
 
     var returnCode = "";
     for (var lineId in code) {
