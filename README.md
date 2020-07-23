@@ -1,7 +1,7 @@
 # Flutter Path Generator for XD
 Generate flutter path code for custom path in XD with ease!
 
-[Download the latest version!](https://github.com/meTowhid/flutter_path_generator_for_xd/raw/master/plugin)
+[Get the latest version!](https://github.com/meTowhid/flutter_path_generator_for_xd/raw/master/plugin)
 
 * Install the plugin
 * Draw your custom shapes
